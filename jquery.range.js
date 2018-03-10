@@ -27,8 +27,8 @@
 	jRange.prototype = {
 		defaults: {
 			onstatechange: function() {},
-      ondragend: function() {},
-      onbarclicked: function() {},
+			ondragend: function() {},
+			onbarclicked: function() {},
 			isRange: false,
 			showLabels: true,
 			showScale: true,
@@ -67,17 +67,12 @@
 			this.clickableBar  = this.domNode.find('.clickable-dummy');
 			this.interval      = this.options.to - this.options.from;
 			this.render();
+			this.attachEvents();
 		},
 		render: function() {
-			// Check if inputNode is visible, and have some width, so that we can set slider width accordingly.
-			if (this.inputNode.width() === 0 && !this.options.width) {
-				console.log('jRange : no width found, returning');
-				return;
-			} else {
-				this.options.width = this.options.width || this.inputNode.width();
-				this.domNode.width(this.options.width);
-				this.inputNode.hide();
-			}
+			this.options.width = this.options.width || this.inputNode.parent().width();
+			this.domNode.width(this.options.width);
+			this.inputNode.hide();
 
 			if (this.isSingle()) {
 				this.lowPointer.hide();
@@ -86,7 +81,6 @@
 			if (!this.options.showLabels) {
 				this.labels.hide();
 			}
-			this.attachEvents();
 			if (this.options.showScale) {
 				this.renderScale();
 			}
@@ -137,7 +131,7 @@
 				.trigger('rangeslideend');
 			this.labels.removeClass('focused');
 			$(document).off('.slider');
-		  this.options.ondragend.call(this, this.options.value);
+			this.options.ondragend.call(this, this.options.value);
 		},
 		barClicked: function(e) {
 			if(this.options.disable) return;
@@ -146,12 +140,12 @@
 				this.setPosition(this.pointers.last(), x, true, true);
 			else {
 				var firstLeft      	= Math.abs(parseFloat(this.pointers.first().css('left'), 10)),
-						firstHalfWidth 	= this.pointers.first().width() / 2,
-						lastLeft 			 	= Math.abs(parseFloat(this.pointers.last().css('left'), 10)),
-						lastHalfWidth  	= this.pointers.first().width() / 2,
-						leftSide        = Math.abs(firstLeft - x + firstHalfWidth),
-						rightSide       = Math.abs(lastLeft - x + lastHalfWidth),
-						pointer;
+					firstHalfWidth 	= this.pointers.first().width() / 2,
+					lastLeft 		= Math.abs(parseFloat(this.pointers.last().css('left'), 10)),
+					lastHalfWidth  	= this.pointers.first().width() / 2,
+					leftSide        = Math.abs(firstLeft - x + firstHalfWidth),
+					rightSide       = Math.abs(lastLeft - x + lastHalfWidth),
+					pointer;
 
 				if(leftSide == rightSide) {
 					pointer = x < firstLeft ? this.pointers.first() : this.pointers.last();
@@ -224,6 +218,10 @@
 			}
 		},
 		// will be called from outside
+		reinit: function(options) {
+			this.options = $.extend({}, this.options, options);
+			this.render();
+		},
 		setValue: function(value) {
 			var values = value.toString().split(',');
 			values[0] = Math.min(Math.max(values[0], this.options.from), this.options.to) + '';
@@ -383,6 +381,7 @@
 				$this.data('plugin_' + pluginName, (data = new jRange(this, options)));
 				$(window).resize(function() {
 					data.setValue(data.getValue());
+					data.reinit({ width: data.inputNode.parent().width() });
 				}); // Update slider position when window is resized to keep it in sync with scale
 			}
 			// if first argument is a string, call silimarly named function
